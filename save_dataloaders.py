@@ -7,9 +7,9 @@ import random
 import numpy as np
 from tqdm import tqdm, trange
 from torch.utils.data import DataLoader, random_split
-from STFounda import STFounda  # Assuming this is a custom model defined elsewhere
+from STFounda import STFounda
 from dataset import MultiModalDataset
-from Loss import InfoNCE  # Assuming this is a custom loss defined elsewhere
+from Loss import InfoNCE
 import matplotlib.pyplot as plt
 from listdata import list_data
 import pandas as pd
@@ -21,7 +21,7 @@ import pickle
 seed = 42
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)  # 如果使用多个 GPU
+torch.cuda.manual_seed_all(seed)
 np.random.seed(seed)
 random.seed(seed)
 torch.backends.cudnn.deterministic = True
