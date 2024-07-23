@@ -15,9 +15,6 @@ def check_file(file_path):
         failed_loaders = []
         for item in data:
             try:
-                # Assuming each item represents a data loader or similar object
-                # and needs to be processed in a specific way
-                # Replace the following with actual processing logic as needed
                 _ = item  # Process item
             except Exception as e:
                 failed_loaders.append(item)
