@@ -20,7 +20,7 @@ import torch.nn as nn
 seed = 42
 torch.manual_seed(seed)
 torch.cuda.manual_seed(seed)
-torch.cuda.manual_seed_all(seed)  # 如果使用多个 GPU
+torch.cuda.manual_seed_all(seed)
 np.random.seed(seed)
 random.seed(seed)
 torch.backends.cudnn.deterministic = True
@@ -47,12 +47,12 @@ def load_dataloader(file_path):
     return dataloader
 
 # 模型和训练参数
-num_epochs = 5
+num_epochs = 25
 batch_size = 16  # 每个小批次的大小
 global_batch_size = 256  # 全局批次大小
 accumulation_steps = global_batch_size // batch_size  # 梯度累计步数
 eps = 1e-5
-save_interval = 1  # 每5个epoch保存一次
+save_interval = 5  # 每5个epoch保存一次
 
 # 初始化模型
 model = STFounda()
@@ -117,7 +117,7 @@ def train_one_epoch(model, optimizer, train_loader_paths, epoch, accumulation_st
         
         pbar_batch.close()
         del train_loader
-        torch.cuda.empty_cache()  # 清理显存
+        torch.cuda.empty_cache()
 
     pbar_dataloader.close()
     return train_m_loss / total_batches, train_n_loss / total_batches, total_batches
@@ -163,7 +163,7 @@ def validate(model, val_loader_paths, device):
 
             pbar_batch.close()
             del val_loader
-            torch.cuda.empty_cache()  # 清理显存
+            torch.cuda.empty_cache()
         pbar_dataloader.close()
 
     return val_m_loss / total_batches, val_n_loss / total_batches, total_batches
@@ -180,7 +180,7 @@ val_m_losses, val_n_losses = [], []
 learning_rates = []
 best_total_loss = float('inf')
 
-# 创建保存模型的目录
+
 os.makedirs('/mnt/public/luoling/FoundaST/code/experimental1-init-param/model', exist_ok=True)
 
 excel_writer = pd.ExcelWriter('/mnt/public/luoling/FoundaST/code/experimental1-init-param/loss_data.xlsx', engine='openpyxl')
@@ -198,12 +198,10 @@ for epoch in trange(num_epochs, desc="Epochs"):
     
     print(f'Epoch {epoch + 1}/{num_epochs}, Train m_loss: {train_m_loss}, Train n_loss: {train_n_loss}, Validation m_loss: {val_m_loss}, Validation n_loss: {val_n_loss}')
     lr_scheduler.step(val_total_loss)
-    
-    # 保存当前epoch的模型
+
     if (epoch + 1) % save_interval == 0:
         torch.save(model.state_dict(), f'/mnt/public/luoling/FoundaST/code/experimental1-init-param/model/m_loss_{train_m_loss:.4f}_n_loss_{train_n_loss:.4f}_epoch_{epoch+1}.pt')
 
-    # 如果当前模型是最好的，则保存它
     if val_total_loss < best_total_loss:
         best_total_loss = val_total_loss
         torch.save(model.state_dict(), f'/mnt/public/luoling/FoundaST/code/experimental1-init-param/model/best_model_m_loss_{val_m_loss:.4f}_n_loss_{val_n_loss:.4f}.pt')
@@ -218,7 +216,6 @@ for epoch in trange(num_epochs, desc="Epochs"):
     })
     epoch_data.to_excel(excel_writer, index=False, header=epoch == 0, startrow=epoch)
 
-# 确保所有数据写入Excel文件
 excel_writer.save()
 
 # 绘制并保存损失曲线
