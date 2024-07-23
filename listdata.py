@@ -5,9 +5,9 @@ import random
 import numpy as np
 from tqdm import tqdm, trange
 from torch.utils.data import DataLoader, random_split
-from STFounda import STFounda  # Assuming this is a custom model defined elsewhere
+from STFounda import STFounda
 from dataset import MultiModalDataset
-from Loss import InfoNCE  # Assuming this is a custom loss defined elsewhere
+from Loss import InfoNCE
 import matplotlib.pyplot as plt
 import torch.nn as nn
 import pandas as pd
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     shared_val_loaders = manager.list()
 
    
-    # 多线程函数
+    # 多线程
     def create_dataloaders(path, train_loaders, val_loaders):
         dataset = MultiModalDataset(path, path)
         train_size = int(0.8 * len(dataset))
@@ -74,7 +74,6 @@ if __name__ == '__main__':
         train_loaders.append(train_loader)
         val_loaders.append(val_loader)
 
-    # 使用进程池加速DataLoader的创建过程
     with multiprocessing.Pool(processes=30) as pool:
         results = []
         for path in data_paths:
