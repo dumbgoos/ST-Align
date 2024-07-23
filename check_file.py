@@ -47,7 +47,7 @@ def check_pkl_files(directory, max_workers=30):
     return invalid_files, failed_loaders_dict
 
 def main():
-    directory = '/mnt/public/luoling/FoundaST/code/dataloader/valid'  # 替换为你的目标目录
+    directory = '/mnt/public/luoling/FoundaST/code/dataloader/valid'
     invalid_files, failed_loaders_dict = check_pkl_files(directory)
 
     if invalid_files:
