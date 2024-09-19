@@ -52,7 +52,7 @@ class ConvPoolEncoder(nn.Module):
     
 
 class STEncoder(nn.Module):
-    def __init__(self, dim=24*24, heads=8, dim_head=64, dropout=0.):
+    def __init__(self, dim=24*24, heads=8, dim_head=64, dropout=0.5):
         """
         Initializes the STEncoder module.
 
@@ -153,7 +153,7 @@ class ConvUpsampler(nn.Module):
     
 
 class CrossAttention(nn.Module):
-    def __init__(self, dim_q=24*3, dim_kv=24*3, heads=8, dim_head=64, dropout=0.):
+    def __init__(self, dim_q=24*3, dim_kv=24*3, heads=8, dim_head=64, dropout=0.6):
         """
         Initializes the CrossAttention module for 3D input tensors.
 
@@ -290,7 +290,7 @@ class STDPAFI(nn.Module):
 
 # Pathway Path
 class PathwayEncoder(nn.Module):
-    def __init__(self, dim=2343, heads=8, dim_head=64, dropout=0.):
+    def __init__(self, dim=2343, heads=8, dim_head=64, dropout=0.5):
         """
         Initializes the PathwayEncoder module.
 
@@ -669,7 +669,9 @@ class DSCAN(nn.Module):
         self.pathway_dpafi = PathwayDPAFI()
         self.afin = AFIN()
 
-        self.final_linear = nn.Linear(1728, 1024)
+        self.final_linear_out = nn.Linear(1728, 1024)
+        self.final_linear_st = nn.Linear(1728, 1024)
+        self.final_linear_exp = nn.Linear(1728, 1024)
 
     def forward(self, st, st_emb, exp, exp_emb):
         """
@@ -689,7 +691,12 @@ class DSCAN(nn.Module):
         out = self.afin(st_feature, pathway_feature)
 
         out = out.view(out.size(0), -1)
-        out = self.final_linear(out)
+        st_feature = st_feature.view(st_feature.size(0), -1)
+        pathway_feature = pathway_feature.view(pathway_feature.size(0), -1)
+        
+        out = self.final_linear_out(out)
+        st = self.final_linear_st(st_feature)
+        exp = self.final_linear_exp(pathway_feature)
 
-        return out
+        return st, exp, out
     
