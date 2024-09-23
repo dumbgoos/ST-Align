@@ -72,6 +72,7 @@ def normalize_image(image, mean, std):
 def crop_images_by_physical_size(data, patch_size_um):
     """Crop image based on patch size in micrometers and return an array of cropped images."""
     # Step 1: Scale coordinates
+    ################################################## modify add name##################################################
     data = scale_coordinate(data)
     
     # Step 2: Get necessary scale factors and image data
@@ -83,7 +84,9 @@ def crop_images_by_physical_size(data, patch_size_um):
     patch_size_pixels = calculate_patch_size_in_pixels(patch_size_um, scalefactors, spot_size_um)
     
     # Step 4: Get high-resolution image data
+   
     raw_image_data = data.uns["spatial"][library_id]["images"]["hires"]
+    ################################################## modify##################################################
     image_data = normalize_image(raw_image_data, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     
     # Step 5: Crop images
@@ -99,6 +102,7 @@ def crop_images_by_physical_size(data, patch_size_um):
         bottom = int(row + patch_size_pixels // 2)
         
         # Ensure the cropped area is within the image boundaries
+        ################################################## modify##################################################
         if left < 0 or top < 0 or right > image_data.shape[1] or bottom > image_data.shape[0]:
             continue
         
@@ -127,7 +131,7 @@ def crop_images_by_physical_size(data, patch_size_um):
         'row': row_vector,
         'col': col_vector
     })
-
+    ################################################## modify dict##################################################
     return sequence_vector, cropped_images_array, coor_dataframe
 
 def crop_images_by_pixel_size(data, patch_size_pixels):
