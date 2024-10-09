@@ -47,7 +47,7 @@ class IMGGlobalBottleNeck(nn.Module):
 
 class UNIEncoder(nn.Module):
     def __init__(self,
-                 model_local_dir='../pretrain_model/',
+                 model_local_dir='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/code_space/DSCAN/pretrain_model',
                  device='cuda',
                  img_size=224,
                  patch_size=16,
@@ -468,6 +468,30 @@ class DSCAN(nn.Module):
         self.global_fusion = GlobalFusion()
         self.local_fusion = LocalFusion()
 
+        self.img_local_mlp = nn.Sequential(
+            nn.Linear(8*512, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+        )
+
+        self.gene_local_mlp = nn.Sequential(
+            nn.Linear(8*512, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+        )
+
+        self.local_mlp = nn.Sequential(
+            nn.Linear(8*512, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+        )
+
+        self.global_mlp = nn.Sequential(
+            nn.Linear(8*512, 2048),
+            nn.ReLU(),
+            nn.Linear(2048, 1024),
+        )
+
     def forward(self, local_img, local_gene, global_img, global_gene):
         local_img_feature = self.img_local(local_img)
         local_gene_feature = self.gene_local(local_gene)
@@ -478,4 +502,42 @@ class DSCAN(nn.Module):
         local_feature = self.local_fusion(local_img_feature, local_gene_feature)
         global_feature = self.global_fusion(global_img_feature, global_gene_feature)
 
+        local_img_feature = self.img_local_mlp(local_img_feature.view(local_img_feature.size(0), -1))
+        local_gene_feature = self.gene_local_mlp(local_gene_feature.view(local_gene_feature.size(0), -1))
+
+        local_feature = self.local_mlp(local_feature.view(local_feature.size(0), -1))
+        global_feature = self.global_mlp(global_feature.view(global_feature.size(0), -1))
+
         return local_img_feature, local_gene_feature, local_feature, global_feature
+
+
+# 10.7
+# sample出部分数据集用于预实验
+# 优化dataset，写训练过程
+# 完成模型框架
+
+
+if __name__ == '__main__':
+    # x = np.load('./data/global_gene.npz')['arr_0'].astype('float32')
+    # x = torch.tensor(x)
+    # model = GlobalGenePath()
+    # print(model(x).shape)
+    #
+    # scgpt_tensor = torch.randn(2728, 512)
+    # local_path = LocalGenePath()
+    # print(local_path(scgpt_tensor).shape)
+    #
+    # x = torch.randn(1, 3, 112, 112)
+    # model = GlobalImgPath()
+    # print(model(x).shape)
+    #
+    # x = torch.randn(1, 3, 25, 25)
+    # model = LocalImgPath()
+    # print(model(x).shape)
+    scgpt_tensor = torch.randn(1, 512)
+    gene_global = torch.randn(1, 4384)
+    img_local = torch.randn(1, 3, 25, 25)
+    img_global = torch.randn(1, 3, 112, 112)
+
+    model = DSCAN()
+    print(model(img_local, scgpt_tensor, img_global, gene_global))

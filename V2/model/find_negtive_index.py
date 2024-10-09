@@ -1,6 +1,5 @@
 import torch
 
-
 def get_positive_and_negatives(index, cluster_test):
     """
     Given an index, randomly samples a positive example from the same class (excluding itself),
