@@ -2,7 +2,7 @@ import argparse
 import torch
 import utils
 from torch.backends import cudnn
-from dataset import MultiModalDataset
+from dataset2 import MultiModalDataset
 import torch.utils.data
 from dscan import DSCAN
 import torch.nn as nn
@@ -19,16 +19,16 @@ def get_args_parser():
     parser = argparse.ArgumentParser('DSCAN', add_help=False)
 
     # data parameters
-    parser.add_argument('--spot_img_path', default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/2_same_size_spot_img/GSE144239_GSM4565823.npz',
+    parser.add_argument('--spot_img_path', default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/111_spot_view_img',
                         type=str, help="spot level image root path.")
     parser.add_argument('--spot_gene_path',
-                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/5_scgpt_embed_gene_spot/GSE144239_GSM4565823_count.npz', type=str,
+                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/111_spot_view_gene', type=str,
                         help="spot level gene root path.")
     parser.add_argument('--global_img_path',
-                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/3_same_size_global_img/GSE144239_GSM4565823.npz', type=str,
+                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/111_global_view_img', type=str,
                         help="global level image path.")
     parser.add_argument('--global_gene_path',
-                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/7_same_size_global_gene/GSE144239_GSM4565823.npz', type=str,
+                        default='/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/111_global_view_gene', type=str,
                         help='global level gene root path.')
     # Model parameters
     parser.add_argument('--alpha', type=float, default=0.5, help="""alpha of loss.""")
@@ -36,31 +36,32 @@ def get_args_parser():
             weight decay.""")
     parser.add_argument('--weight_decay_end', type=float, default=0.4, help="""Final value of the
             weight decay.""")
-    
+
     parser.add_argument("--lr", default=0.0005, type=float, help="""Learning rate at the end of
         linear warmup (highest LR used during training). The learning rate is linearly scaled
         with the batch size, and specified here for a reference batch size of 256.""")
     parser.add_argument("--warmup_epochs", default=10, type=int,
-        help="Number of epochs for the linear learning-rate warm up.")
+                        help="Number of epochs for the linear learning-rate warm up.")
     parser.add_argument('--min_lr', type=float, default=1e-6, help="""Target LR at the
         end of optimization. We use a cosine LR schedule with linear warmup.""")
-    
-    parser.add_argument('--batch_size_per_gpu', default=16, type=int,
+
+    parser.add_argument('--batch_size_per_gpu', default=24, type=int,
                         help='Per-GPU batch-size : number of distinct images loaded on one GPU.')
     parser.add_argument('--epochs', default=100, type=int, help='Number of epochs of training.')
     parser.add_argument('--optimizer', default='adamw', type=str,
                         choices=['adamw', 'sgd'], help="""Type of optimizer.""")
 
     # Misc
-    parser.add_argument('--output_dir', default="/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/code_space/DSCAN/log/", type=str, help='Path to save logs and checkpoints.')
+    parser.add_argument('--output_dir',
+                        default="/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/code_space/DSCAN/log_10_10_model/", type=str,
+                        help='Path to save logs and checkpoints.')
     parser.add_argument('--seed', default=42, type=int, help='Random seed.')
     parser.add_argument('--device', default='cuda', type=str, help='device.')
-    parser.add_argument('--num_workers', default=2, type=int, help='Number of data loading workers per GPU.')
+    parser.add_argument('--num_workers', default=10, type=int, help='Number of data loading workers per GPU.')
     parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up
             distributed training; see https://pytorch.org/docs/stable/distributed.html""")
     parser.add_argument('--saveckp_freq', default=5, type=int, help='Save checkpoint every x epochs.')
     parser.add_argument("--local_rank", default=0, type=int, help="Please ignore and do not set this argument.")
-    
 
     return parser
 
@@ -72,10 +73,18 @@ def train_dscan(args):
     cudnn.benchmark = True
 
     # ============ preparing data ... ============
-    cluster_label = pd.read_csv('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/4_init_cluster/GSE144239_GSM4565823.csv')['cluster_label'].tolist()
+    cluster_labels = []
+    dataset_name = pd.read_csv('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/use_dataset.csv')[
+        'DATA_BASE_NAME'].tolist()
+
+    for item in [os.path.join('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/4_init_cluster', item + '.csv') for item in
+                 dataset_name]:
+        cluster_labels.append(pd.read_csv(item)['cluster_label'].tolist())
+
+    dict_cluster = dict(zip(dataset_name, cluster_labels))
 
     dataset = MultiModalDataset(args.spot_img_path, args.spot_gene_path, args.global_img_path, args.global_gene_path,
-                                cluster_label)
+                                dict_cluster)
     sampler = torch.utils.data.DistributedSampler(dataset, shuffle=True)
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -218,10 +227,10 @@ def train_one_epoch(model, loss_spot, loss_fusion, loss_alpha, data_loader,
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
         metric_logger.update(wd=optimizer.param_groups[0]["weight_decay"])
 
-        # gather the stats from all processes
-        metric_logger.synchronize_between_processes()
-        print("Averaged stats:", metric_logger)
-        return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 
 if __name__ == '__main__':
