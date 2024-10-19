@@ -36,15 +36,15 @@ def get_args_parser():
             weight decay.""")
     parser.add_argument('--weight_decay_end', type=float, default=0.4, help="""Final value of the
             weight decay.""")
-
+    
     parser.add_argument("--lr", default=0.0005, type=float, help="""Learning rate at the end of
         linear warmup (highest LR used during training). The learning rate is linearly scaled
         with the batch size, and specified here for a reference batch size of 256.""")
-    parser.add_argument("--warmup_epochs", default=10, type=int,
-                        help="Number of epochs for the linear learning-rate warm up.")
+    parser.add_argument("--warmup_epochs", default=2, type=int,
+        help="Number of epochs for the linear learning-rate warm up.")
     parser.add_argument('--min_lr', type=float, default=1e-6, help="""Target LR at the
         end of optimization. We use a cosine LR schedule with linear warmup.""")
-
+    
     parser.add_argument('--batch_size_per_gpu', default=24, type=int,
                         help='Per-GPU batch-size : number of distinct images loaded on one GPU.')
     parser.add_argument('--epochs', default=100, type=int, help='Number of epochs of training.')
@@ -52,16 +52,15 @@ def get_args_parser():
                         choices=['adamw', 'sgd'], help="""Type of optimizer.""")
 
     # Misc
-    parser.add_argument('--output_dir',
-                        default="/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/code_space/DSCAN/log_10_10_model/", type=str,
-                        help='Path to save logs and checkpoints.')
+    parser.add_argument('--output_dir', default="/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/code_space/DSCAN/log_10_10_model/", type=str, help='Path to save logs and checkpoints.')
     parser.add_argument('--seed', default=42, type=int, help='Random seed.')
     parser.add_argument('--device', default='cuda', type=str, help='device.')
     parser.add_argument('--num_workers', default=10, type=int, help='Number of data loading workers per GPU.')
     parser.add_argument("--dist_url", default="env://", type=str, help="""url used to set up
             distributed training; see https://pytorch.org/docs/stable/distributed.html""")
-    parser.add_argument('--saveckp_freq', default=5, type=int, help='Save checkpoint every x epochs.')
+    parser.add_argument('--saveckp_freq', default=1, type=int, help='Save checkpoint every x epochs.')
     parser.add_argument("--local_rank", default=0, type=int, help="Please ignore and do not set this argument.")
+    
 
     return parser
 
@@ -74,11 +73,9 @@ def train_dscan(args):
 
     # ============ preparing data ... ============
     cluster_labels = []
-    dataset_name = pd.read_csv('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/use_dataset.csv')[
-        'DATA_BASE_NAME'].tolist()
+    dataset_name = pd.read_csv('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/use_dataset.csv')['DATA_BASE_NAME'].tolist()
 
-    for item in [os.path.join('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/4_init_cluster', item + '.csv') for item in
-                 dataset_name]:
+    for item in [os.path.join('/mnt/public/luoling/9-23-BEGIN_FROM_HEAD/data/4_init_cluster', item+'.csv') for item in dataset_name]:
         cluster_labels.append(pd.read_csv(item)['cluster_label'].tolist())
 
     dict_cluster = dict(zip(dataset_name, cluster_labels))
@@ -131,9 +128,21 @@ def train_dscan(args):
     )
     print(f"Loss, optimizer and schedulers ready.")
 
-    start_epoch = 0
-    start_time = time.time()
+    to_restore = {"epoch": 0}
 
+    utils.restart_from_checkpoint(
+        os.path.join(args.output_dir, "checkpoint.pth"),
+        run_variables=to_restore,
+        model=model,
+        optimizer=optimizer,
+        spot_loss=spot_loss,
+        fusion_loss=fusion_loss
+    )
+
+    start_epoch = to_restore["epoch"]
+
+    start_time = time.time()
+    print("Starting DINO training !")
     for epoch in range(start_epoch, args.epochs):
         data_loader.sampler.set_epoch(epoch)
 
@@ -165,9 +174,10 @@ def train_dscan(args):
         if utils.is_main_process():
             with (Path(args.output_dir) / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
-        total_time = time.time() - start_time
-        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
-        print('Training time {}'.format(total_time_str))
+                
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
 
 
 def train_one_epoch(model, loss_spot, loss_fusion, loss_alpha, data_loader,

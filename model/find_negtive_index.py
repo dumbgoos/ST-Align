@@ -19,14 +19,6 @@ def get_positive_and_negatives(index, cluster_test):
 
     current_label = cluster_test[index]
 
-    # Get all indices with the same label excluding the current index
-    positive_indices = torch.where(cluster_test == current_label)[0]
-    positive_indices = positive_indices[positive_indices != index]
-
-    # Randomly select one positive index
-    rand_idx = torch.randint(high=len(positive_indices), size=(1,)).item()
-    pos_index = positive_indices[rand_idx].item()
-
     # Get unique labels excluding the current label
     labels = torch.unique(cluster_test)
     labels = labels[labels != current_label]
@@ -40,4 +32,4 @@ def get_positive_and_negatives(index, cluster_test):
         neg_index = label_indices[rand_idx].item()
         negative_indices.append(neg_index)
 
-    return pos_index, negative_indices
+    return negative_indices

@@ -509,3 +509,35 @@ class DSCAN(nn.Module):
         global_feature = self.global_mlp(global_feature.view(global_feature.size(0), -1))
 
         return local_img_feature, local_gene_feature, local_feature, global_feature
+
+
+# 10.7
+# sample出部分数据集用于预实验
+# 优化dataset，写训练过程
+# 完成模型框架
+
+
+if __name__ == '__main__':
+    # x = np.load('./data/global_gene.npz')['arr_0'].astype('float32')
+    # x = torch.tensor(x)
+    # model = GlobalGenePath()
+    # print(model(x).shape)
+    #
+    # scgpt_tensor = torch.randn(2728, 512)
+    # local_path = LocalGenePath()
+    # print(local_path(scgpt_tensor).shape)
+    #
+    # x = torch.randn(1, 3, 112, 112)
+    # model = GlobalImgPath()
+    # print(model(x).shape)
+    #
+    # x = torch.randn(1, 3, 25, 25)
+    # model = LocalImgPath()
+    # print(model(x).shape)
+    scgpt_tensor = torch.randn(1, 512)
+    gene_global = torch.randn(1, 4384)
+    img_local = torch.randn(1, 3, 25, 25)
+    img_global = torch.randn(1, 3, 112, 112)
+
+    model = DSCAN()
+    print(model(img_local, scgpt_tensor, img_global, gene_global))
