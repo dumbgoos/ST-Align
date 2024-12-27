@@ -13,7 +13,7 @@ from torch.backends import cudnn
 import pandas as pd
 
 import utils
-from dataset2 import MultiModalDataset
+from dataset import MultiModalDataset
 from stalign import STAlign
 from info_nce import InfoNCE
 
