@@ -1,7 +1,7 @@
 # ST-Align
 ## 📚 Model Overview
 
-![Model Architecture](https://your-image-link.com/architecture.png)
+![Model Architecture](https://github.com/dumbgoos/STAlign/blob/main/img/model.png)
 
 ## Project TODO List 🚀
 
