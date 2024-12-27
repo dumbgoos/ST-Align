@@ -46,7 +46,7 @@ Thank you for your interest and contributions! If you have any suggestions or wo
 
 ## 📚 Citation
 ```bibtex
-@misc{chen2024stimage1k4m,
+@misc{lin2024stalign,
       title={ST-Align: A Multimodal Foundation Model for Image-Gene Alignment in Spatial Transcriptomics}, 
       author={Yuxiang Lin and Ling Luo and Ying Chen and others},
       year={2024},
