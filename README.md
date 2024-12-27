@@ -1,5 +1,5 @@
 # ST-Align
-## 📚 Model Overview
+## 📖 Model Overview
 
 ![Model Architecture](https://github.com/dumbgoos/STAlign/blob/main/img/model.png)
 
@@ -45,7 +45,7 @@ Welcome to the project's TODO list! Below are the main tasks we are currently wo
 Thank you for your interest and contributions! If you have any suggestions or would like to participate in the project development, feel free to submit a Pull Request or contact me.
 
 ## 📚 Citation
-```bash
+```bibtex
 @misc{chen2024stimage1k4m,
       title={ST-Align: A Multimodal Foundation Model for Image-Gene Alignment in Spatial Transcriptomics}, 
       author={Yuxiang Lin and Ling Luo and Ying Chen and others},
